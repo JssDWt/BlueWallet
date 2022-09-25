@@ -413,8 +413,12 @@ const WalletDetails = () => {
       }
     });
 
-    const csvString = [['Transaction ID', 'Note'], ...notes.map(item => [item.hash, item.note])].map(e => e.join(',')).join('\n');
-    writeFileAndShare(`${wallet.label.replace(' ', '')}-Notes.csv`, csvString);
+    if (notes.length === 0) {
+      return alert(loc.formatString(loc.wallets.details_export_notes_no_notes, { walletLabel: wallet.label }));
+    } else {
+      const csvString = [['Transaction ID', 'Note'], ...notes.map(item => [item.hash, item.note])].map(e => e.join(',')).join('\n');
+      writeFileAndShare(`${wallet.label.replace(' ', '')}-Notes.csv`, csvString);
+    }
   };
 
   const handleDeleteButtonTapped = () => {

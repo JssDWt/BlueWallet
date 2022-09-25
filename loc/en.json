@@ -416,6 +416,7 @@
     "details_display": "Display in Wallets List",
     "details_export_backup": "Export/Backup",
     "details_export_notes": "Export Notes",
+    "details_export_notes_no_notes": "{walletLabel} does not have any notes.",
     "details_master_fingerprint": "Master Fingerprint",
     "details_ms_l": "{m} of {n} legacy (p2sh)",
     "details_ms_ns": "{m} of {n} native segwit (p2wsh)",
