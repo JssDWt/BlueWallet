@@ -67,6 +67,21 @@ const writeFileAndExport = async function (filename, contents) {
   }
 };
 
+export const writeFileAndShare = async function (filename, contents) {
+  const filePath = RNFS.TemporaryDirectoryPath + `/${filename}`;
+  await RNFS.writeFile(filePath, contents);
+  await Share.open({
+    url: 'file://' + filePath,
+    saveToFiles: isDesktop,
+  })
+    .catch(error => {
+      console.log(error);
+    })
+    .finally(() => {
+      RNFS.unlink(filePath);
+    });
+};
+
 /**
  * Opens & reads *.psbt files, and returns base64 psbt. FALSE if something went wrong (wont throw).
  *

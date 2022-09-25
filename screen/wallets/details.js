@@ -24,6 +24,7 @@ import navigationStyle from '../../components/navigationStyle';
 import { LightningCustodianWallet } from '../../class/wallets/lightning-custodian-wallet';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import Biometric from '../../class/biometrics';
+import RNFS from 'react-native-fs';
 import {
   HDSegwitBech32Wallet,
   SegwitP2SHWallet,
@@ -36,13 +37,14 @@ import {
 } from '../../class';
 import loc from '../../loc';
 import { useTheme, useRoute, useNavigation } from '@react-navigation/native';
-import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import { BlueStorageContext } from '../../blue_modules/storage-context';
 import Notifications from '../../blue_modules/notifications';
 import { isDesktop } from '../../blue_modules/environment';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import alert from '../../components/Alert';
+import { Chain } from '../../models/bitcoinUnits';
+import { writeFileAndShare } from '../../blue_modules/fs';
 
 const prompt = require('../../helpers/prompt');
 
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
 });
 
 const WalletDetails = () => {
-  const { saveToDisk, wallets, deleteWallet, setSelectedWallet } = useContext(BlueStorageContext);
+  const { saveToDisk, wallets, deleteWallet, setSelectedWallet, txMetadata } = useContext(BlueStorageContext);
   const { walletID } = useRoute().params;
   const [isLoading, setIsLoading] = useState(false);
   const [backdoorPressed, setBackdoorPressed] = useState(0);
@@ -402,6 +404,19 @@ const WalletDetails = () => {
     }
   };
 
+  const onExportNotesPressed = async () => {
+    const notes = [];
+    const transactions = wallet.getTransactions();
+    Object.keys(txMetadata).forEach(txid => {
+      if (transactions.find(tx => tx.hash === txid)) {
+        notes.push({ hash: `${txid}`, note: txMetadata[txid].memo });
+      }
+    });
+
+    const csvString = [['Transaction ID', 'Note'], ...notes.map(item => [item.hash, item.note])].map(e => e.join(',')).join('\n');
+    writeFileAndShare(`${wallet.label.replace(' ', '')}-Notes.csv`, csvString);
+  };
+
   const handleDeleteButtonTapped = () => {
     ReactNativeHapticFeedback.trigger('notificationWarning', { ignoreAndroidSystemSettings: false });
     Alert.alert(
@@ -579,7 +594,12 @@ const WalletDetails = () => {
               <View>
                 <BlueSpacing20 />
                 <SecondButton onPress={navigateToWalletExport} testID="WalletExport" title={loc.wallets.details_export_backup} />
-
+                {wallet.chain === Chain.ONCHAIN && (
+                  <>
+                    <BlueSpacing20 />
+                    <SecondButton onPress={onExportNotesPressed} title={loc.wallets.details_export_notes} />
+                  </>
+                )}
                 {wallet.type === MultisigHDWallet.type && (
                   <>
                     <BlueSpacing20 />
