@@ -35,7 +35,7 @@ import {
   HDAezeedWallet,
   LightningLdkWallet,
 } from '../../class';
-import loc from '../../loc';
+import loc, { formatBalanceWithoutSuffix } from '../../loc';
 import { useTheme, useRoute, useNavigation } from '@react-navigation/native';
 import Share from 'react-native-share';
 import { BlueStorageContext } from '../../blue_modules/storage-context';
@@ -43,8 +43,9 @@ import Notifications from '../../blue_modules/notifications';
 import { isDesktop } from '../../blue_modules/environment';
 import { AbstractHDElectrumWallet } from '../../class/wallets/abstract-hd-electrum-wallet';
 import alert from '../../components/Alert';
-import { Chain } from '../../models/bitcoinUnits';
+import { BitcoinUnit, Chain } from '../../models/bitcoinUnits';
 import { writeFileAndShare } from '../../blue_modules/fs';
+import dayjs from 'dayjs';
 
 const prompt = require('../../helpers/prompt');
 
@@ -132,6 +133,7 @@ const WalletDetails = () => {
   const { goBack, navigate, setOptions, popToTop } = useNavigation();
   const { colors } = useTheme();
   const [masterFingerprint, setMasterFingerprint] = useState();
+  const walletTransactionsLength = useMemo(() => wallet.getTransactions().length, [wallet]);
   const derivationPath = useMemo(() => {
     try {
       const path = wallet.getDerivationPath();
@@ -404,21 +406,38 @@ const WalletDetails = () => {
     }
   };
 
-  const onExportNotesPressed = async () => {
+  const onExportHistoryPressed = async () => {
     const notes = [];
     const transactions = wallet.getTransactions();
     Object.keys(txMetadata).forEach(txid => {
-      if (transactions.find(tx => tx.hash === txid)) {
-        notes.push({ hash: `${txid}`, note: txMetadata[txid].memo });
+      const transaction = transactions.find(tx => tx.hash === txid);
+      const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
+      if (transaction) {
+        notes.push({
+          date: dayjs(transaction.received).format('l'),
+          receivedOrSent:
+            transaction.value === 0 && transaction.category !== 'received'
+              ? loc.transactions.details_sent
+              : loc.transactions.details_received,
+          value,
+          hash: txid,
+          memo: txMetadata[txid].memo.trim(),
+        });
       }
     });
-
-    if (notes.length === 0) {
-      return alert(loc.formatString(loc.wallets.details_export_notes_no_notes, { walletLabel: wallet.label }));
-    } else {
-      const csvString = [['Transaction ID', 'Note'], ...notes.map(item => [item.hash, item.note])].map(e => e.join(',')).join('\n');
-      writeFileAndShare(`${wallet.label.replace(' ', '')}-Notes.csv`, csvString);
-    }
+    const csvString = [
+      [
+        loc.transactions.details_received,
+        `${loc.transactions.details_received}/${loc.transactions.details_sent}`,
+        loc.transactions.txid,
+        `${loc.send.create_amount} (${BitcoinUnit.BTC})`,
+        loc.send.create_memo,
+      ],
+      ...notes.map(item => [item.date, item.receivedOrSent, item.hash, item.value, item.memo]),
+    ]
+      .map(e => e.join(','))
+      .join('\n');
+    writeFileAndShare(`${wallet.label.replace(' ', '')}-History.csv`, csvString);
   };
 
   const handleDeleteButtonTapped = () => {
@@ -598,10 +617,10 @@ const WalletDetails = () => {
               <View>
                 <BlueSpacing20 />
                 <SecondButton onPress={navigateToWalletExport} testID="WalletExport" title={loc.wallets.details_export_backup} />
-                {wallet.chain === Chain.ONCHAIN && (
+                {wallet.chain === Chain.ONCHAIN && walletTransactionsLength > 0 && (
                   <>
                     <BlueSpacing20 />
-                    <SecondButton onPress={onExportNotesPressed} title={loc.wallets.details_export_notes} />
+                    <SecondButton onPress={onExportHistoryPressed} title={loc.wallets.details_export_history} />
                   </>
                 )}
                 {wallet.type === MultisigHDWallet.type && (
