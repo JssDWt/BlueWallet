@@ -24,7 +24,6 @@ import navigationStyle from '../../components/navigationStyle';
 import { LightningCustodianWallet } from '../../class/wallets/lightning-custodian-wallet';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import Biometric from '../../class/biometrics';
-import RNFS from 'react-native-fs';
 import {
   HDSegwitBech32Wallet,
   SegwitP2SHWallet,
@@ -37,6 +36,7 @@ import {
 } from '../../class';
 import loc, { formatBalanceWithoutSuffix } from '../../loc';
 import { useTheme, useRoute, useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import { BlueStorageContext } from '../../blue_modules/storage-context';
 import Notifications from '../../blue_modules/notifications';
@@ -411,8 +411,8 @@ const WalletDetails = () => {
     const transactions = wallet.getTransactions();
     Object.keys(txMetadata).forEach(txid => {
       const transaction = transactions.find(tx => tx.hash === txid);
-      const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
       if (transaction) {
+        const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
         notes.push({
           date: dayjs(transaction.received).format('l'),
           receivedOrSent:
