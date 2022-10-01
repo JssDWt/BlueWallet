@@ -339,7 +339,6 @@
     "details_inputs": "Inputs",
     "details_outputs": "Outputs",
     "details_received": "Received",
-    "details_sent": "Sent",
     "transaction_note_saved": "Transaction note has been successfully saved.",
     "details_show_in_block_explorer": "View in Block Explorer",
     "details_title": "Transaction",

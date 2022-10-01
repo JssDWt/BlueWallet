@@ -409,16 +409,13 @@ const WalletDetails = () => {
   const onExportHistoryPressed = async () => {
     const notes = [];
     const transactions = wallet.getTransactions();
-    Object.keys(txMetadata).forEach(txid => {
+    Object.keys(transactions).forEach(txid => {
       const transaction = transactions.find(tx => tx.hash === txid);
       if (transaction) {
         const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
         notes.push({
-          date: dayjs(transaction.received).format('l'),
-          receivedOrSent:
-            transaction.value === 0 && transaction.category !== 'received'
-              ? loc.transactions.details_sent
-              : loc.transactions.details_received,
+          date: dayjs(transaction.received).format('L LTS'), // 08/16/2018 8:02:18 PM
+          isSpent: transaction.value === 0 && transaction.category !== 'received',
           value,
           hash: txid,
           memo: txMetadata[txid].memo.trim(),
@@ -426,14 +423,8 @@ const WalletDetails = () => {
       }
     });
     const csvString = [
-      [
-        loc.transactions.details_received,
-        `${loc.transactions.details_received}/${loc.transactions.details_sent}`,
-        loc.transactions.txid,
-        `${loc.send.create_amount} (${BitcoinUnit.BTC})`,
-        loc.send.create_memo,
-      ],
-      ...notes.map(item => [item.date, item.receivedOrSent, item.hash, item.value, item.memo]),
+      [loc.transactions.details_received, loc.transactions.txid, `${loc.send.create_amount} (${BitcoinUnit.BTC})`, loc.send.create_memo],
+      ...notes.map(item => [item.date, item.hash, item.isSpent ? `-${item.value}` : item.value, item.memo]),
     ]
       .map(e => e.join(','))
       .join('\n');
