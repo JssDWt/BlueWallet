@@ -409,19 +409,17 @@ const WalletDetails = () => {
   const onExportHistoryPressed = async () => {
     const notes = [];
     const transactions = wallet.getTransactions();
-    Object.keys(transactions).forEach(txid => {
-      const transaction = transactions.find(tx => tx.hash === txid);
-      if (transaction) {
-        const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
-        notes.push({
-          date: dayjs(transaction.received).format('L LTS'), // 08/16/2018 8:02:18 PM
-          isSpent: transaction.value === 0 && transaction.category !== 'received',
-          value,
-          hash: txid,
-          memo: txMetadata[txid].memo.trim(),
-        });
-      }
-    });
+
+    for (const transaction of transactions) {
+      const value = formatBalanceWithoutSuffix(transaction.value, BitcoinUnit.BTC, true);
+      notes.push({
+        date: dayjs(transaction.received).format('L LTS'), // 08/16/2018 8:02:18 PM
+        isSpent: transaction.value === 0 && transaction.category !== 'received',
+        value,
+        hash: transaction.hash,
+        memo: txMetadata[transaction.hash].memo.trim(),
+      });
+    }
     const csvString = [
       [loc.transactions.details_received, loc.transactions.txid, `${loc.send.create_amount} (${BitcoinUnit.BTC})`, loc.send.create_memo],
       ...notes.map(item => [item.date, item.hash, item.isSpent ? `-${item.value}` : item.value, item.memo]),
